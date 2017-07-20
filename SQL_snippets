@@ -33,5 +33,133 @@ SELECT TOP 1000 *
 FROM PersonHouseholdAddress 
 WHERE City = 'Bolton'
 
+--This is T-SQL.
+
+--Table showing record count for all tables in dbo
+create table #tempcount (tablename nvarchar(128), record_count bigint)
+EXEC sp_msforeachtable 'insert #tempcount select ''?'', count(*) from ? with (nolock)'
+select * from #tempcount
+drop table #tempcount
+
+--SELECT COUNT(*) FROM AgencySystemPersonHousehold
+
+--View each table
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[AgencySystemPersonHousehold] ASPH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[DimDateMonthly] DDM
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[FctActiveHousehold] FAH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[FctActivePerson] FAP
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[FctPersonAssessment] FPA
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[FctPersonAssessmentBaseline] FPAB
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[Household] H
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[HouseholdHistory] HH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[HouseholdServiceLog] HSL
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[IncomeCharacteristicMapping] ICM
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[OutcomeIndicatorGoal] OIG
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[OutcomeIndicatorMap] OIM
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[OutcomeIndicatorNew] OIN
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[OutcomeIndicatorOld] OIO
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[Person] P
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonAssessment] PA
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonCharacteristic] PChar
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonCharacteristicHistory] PCH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonContact] PCont
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonEngagement] PE
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonHealthInsurance] PHI
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonHealthInsuranceHistory] PHIH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonHistory] PH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonHouseholdAddress] PHA
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonHouseholdAddressJoin] PHAJ
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonIncome] PI
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonIncomeHistory] PIH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPlan] PP
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPlanService] PPS
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPlanServiceHistory] PPSH
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPlanServiceOutcome] PPSO
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPlanServiceOutcomeJoin] PPSOJ
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPreAssessment] PPA
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonPreAssessmentDimension] PPAD
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[PersonRace] PR
+
+--View each reference table -- got Data filter is not supported error for many
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_AddressType] RAT
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Agency] RAgen
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_AgencySystem] RASystem
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_AgencySystemDataRole] RASDR
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_AmountFrequency] RAF
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Assessment] RAsse
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_AssessmentScore] RAScore
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Characteristic] RC
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_CharacteristicType] RCT
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_CityZip] RCZ
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_ContactType] RC
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Dimension]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_DwellingType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_EducationType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Engagement]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Ethnicity]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_FPLLevel]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_FamilyType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_FieldLookup]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Gender]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Goal]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_HealthInsuranceType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_HeatingType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_HouseDistrict]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_HousingType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_IncomeCategory]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Language]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_MaritalStatus]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_OutcomeIndicator]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_OutcomeStatus]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_PersonMatchRule]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_PreAssessmentScore]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Qualifier]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Race]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_RelationshipType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_Role]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_SSNPattern]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_SenateDistrict]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_ServiceDescription]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_ServiceStatusType]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_System]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_SystemTier]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_TableFieldRelationships]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_TableLookup]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_TablesWithHistory]
+SELECT TOP 1000 * FROM [DataBridge_Ben].[dbo].[ref_VulnerabilityType]
+
+SELECT TOP 1000 BBAPD.*, RL.LanguageDesc AS PrimaryLanguage, RL2.LanguageDesc AS SecondaryLanguage FROM BB_ActivePersonDetail BBAPD
+
+LEFT OUTER JOIN Ref_Language RL
+ON BBAPD.PrimaryLanguageID = RL.LanguageID
+
+LEFT OUTER JOIN Ref_Language RL2
+ON BBAPD.SecondLanguageID = RL2.LanguageID
+
+--Basically a pivot table
+SELECT DISTINCT City, Zip, COUNT(*) FROM PersonHouseholdAddress PHA
+GROUP BY City, Zip
+ORDER BY City --DESC to make it descending
+
+SELECT COUNT(*) AS Zips99999 FROM PersonHouseholdAddress PHA --Can't start column name with numbers, i.e., 99999Zips doesn't work
+WHERE Zip = 99999
+
+SELECT COUNT(*) AS Zips99999 FROM PersonHouseholdAddress PHA --Can't start column name with numbers, i.e., 99999Zips doesn't work
+WHERE Zip IN (99999,00000)
+
+SELECT COUNT(*) FROM PersonHouseholdAddress PHA
+WHERE City LIKE '%aterbur%' --Use "LIKE" for strings
+
+--SELECT COUNT(*) FROM PersonHouseholdAddress PHA
+--WHERE CONTAINS (City, '"%aterbur%" OR "%artfor%"') --Doesn't work because it's not full-text indexed
+
+--SELECT *  FROM table  WHERE CONTAINS(fieldname, '"abc1234" OR "cde456" OR "efg8976"')
+
+SELECT * FROM BB_ActivePersonDetail BBAPD
+LEFT OUTER JOIN BB_PersonCharacteristic BBPC
+ON BBAPD.PersonID = BBPC.PersonID
+AND BBAPD.DateMonthlyKey = BBPC.DateMonthlyKey
+
+WHERE BBAPD.PersonID = 33856
 
 No more Ritzybeanboy  :: sad face ::
