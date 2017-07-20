@@ -161,4 +161,5 @@ ON BBAPD.PersonID = BBPC.PersonID
 AND BBAPD.DateMonthlyKey = BBPC.DateMonthlyKey
 
 WHERE BBAPD.PersonID = 33856
---AND BBAPD.PersonID = 33856 -- Using AND messing this up big time--use WHERE because AND and WHERE execute differently
+
+No more Ritzybeanboy  :: sad face ::
