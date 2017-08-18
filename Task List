@@ -1,0 +1,17 @@
+In no particular order...
+
+1)  Determine what kind of new variables we want to create.
+
+2)  Determine if we want to do any binning or grouping of values in our variables.
+
+3)  Search for and determine what to do with missing/NULL values.
+
+4)  Search for outliers, and determine a method for dealing with them
+
+5)  Get template set up for a report. (Annie)
+
+6)  Gather code used to this point and put on Git hub. Fix data tables so we are getting DateMonthlyKey >= 92 (Ben)
+
+7)  Brainstorm potential targets.
+  -Difference between previoud assessment and current.  Did Person get better or worse?
+  -Assessment score

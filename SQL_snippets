@@ -163,3 +163,89 @@ AND BBAPD.DateMonthlyKey = BBPC.DateMonthlyKey
 WHERE BBAPD.PersonID = 33856
 
 No more Ritzybeanboy  :: sad face ::
+=======
+
+
+/*********************************************************
+Added by Ben 8.2.17
+*********************************************************/
+
+--Create a temp table with an age calculation using DATEDIFF
+SELECT
+[ActivePersonKey]
+      ,[PersonID]
+      ,BBAPD.[DateMonthlyKey]
+      ,[IsActive]
+      ,[HouseholdID]
+      ,[PersonHouseholdAddressID]
+      ,[HouseholdHistoryID]
+      ,[Birthdate]
+      ,YearsOfAge = (DATEDIFF(mm, Birthdate, DDM.EndDate) / 12) --yy compares the year only, so we needed t get months and calculate the years
+      ,[AgeBracketID]
+      ,[PrimaryLanguageID]
+      ,[SecondLanguageID]
+      ,[EducationID]
+      ,[MaritalStatusID]
+      ,[EthnicityID]
+      ,[GenderID]
+      ,[FPL]
+      ,[AnnualIncome]
+      ,[DeceasedDate] 
+	--INTO creates a new table
+	--## makes a temp table.  This table will disappear once we log out. 
+INTO ##TEMPAGE
+FROM BB_ActivePersonDetail BBAPD
+INNER JOIN DimDateMonthly DDM
+ON BBAPD.DateMonthlyKey = DDM.DateMonthlyKey
+
+
+--Once we check data in temp table, we can create our permanent table 
+SELECT * 
+INTO BB_ActivePersonDetail
+FROM ##TEMPAGE
+
+
+--After creating our permanent table, we updated the AgeBracketID with a SQL UPDATE statement that also uses a JOIN to get the values for the update.
+UPDATE ##TEMPAGE  --What table to update 
+SET ##TEMPAGE.AgeBracketID = BB_Ref_AgeBracket.AgeBracketID  --What values to update, and what values to update them to
+FROM ##TEMPAGE --The join
+LEFT OUTER JOIN BB_Ref_AgeBracket 
+ON ##TEMPAGE.YearsOfAge BETWEEN BB_Ref_AgeBracket.StartAge AND BB_Ref_AgeBracket.EndAge
+
+
+
+
+
+/*********************************************************
+UPDATE Statements -Fixing address data example
+
+PRO TIP:  When doing UPDATEs DON'T FORGET THE WHERE CLAUSE !!!!!
+
+Added by Ben 8.17.17
+*********************************************************/
+
+
+	--Create temp table to make changes in first
+SELECT *
+INTO ##TEMPAddressFix 
+FROM BB_ActivePersonDetail
+*/
+
+	
+	-Search for rows to update
+SELECT DISTINCT City, State, Zip
+FROM ##TEMPAddressFix
+ORDER BY City
+
+
+	--The UPDATE statement
+UPDATE ##TEMPAddressFix
+SET City = 'Barkhamsted'
+WHERE City = 'Barhamsted'
+OR City LIKE 'Barkhamstad'
+OR City LIKE 'BARKHAMSTEAD'
+OR City LIKE 'BARKHAMSTED'
+OR City LIKE 'Barkhamsted,'
+
+UPDATE ##TEMPAddressFix Set City = NULL, Zip = '06762' WHERE City = '06762' AND Zip = '99999'
+UPDATE ##TEMPAddressFix Set State = 'CT' WHERE City = 'Brewster'
