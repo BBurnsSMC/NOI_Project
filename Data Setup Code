@@ -1,1 +1,23 @@
-
+SELECT 
+	BBAPD.*, RR.RaceDesc, FT.FamilyTypeDesc, RL.LanguageDesc AS PrimaryLanguageDesc, RL2.LanguageDesc AS SecondaryLanguageDesc, RET.EducationDesc,
+	RMS.MaritalStatusDesc, RHT.HousingTypeDesc, RDT.DwellingTypeDesc, RHeatT.HeatingTypeDesc
+INTO BBAB_ActivePersonDetail -- This creates a new table.
+FROM BB_ActivePersonDetail BBAPD
+LEFT OUTER JOIN ref_Race RR
+ON BBAPD.EthnicityID = RR.RaceID
+LEFT OUTER JOIN ref_FamilyType FT
+ON BBAPD.FamilyTypeID = FT.FamilyTypeID
+LEFT OUTER JOIN ref_Language RL
+ON BBAPD.PrimaryLanguageID = RL.LanguageID
+LEFT OUTER JOIN ref_Language RL2
+ON BBAPD.SecondLanguageID = RL2.LanguageID
+LEFT OUTER JOIN ref_EducationType RET
+ON BBAPD.EducationID = RET.EducationID
+LEFT OUTER JOIN ref_MaritalStatus RMS
+ON BBAPD.MaritalStatusID = RMS.MaritalStatusID
+LEFT OUTER JOIN ref_HousingType RHT
+ON BBAPD.HousingTypeID = RHT.HousingTypeID
+LEFT OUTER JOIN ref_DwellingType RDT
+ON BBAPD.DwellingTypeID = RDT.DwellingTypeID
+LEFT OUTER JOIN ref_HeatingType RHeatT
+ON BBAPD.HeatingTypeID = RHeatT.HeatingTypeID
