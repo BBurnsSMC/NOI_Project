@@ -81,3 +81,46 @@ FROM ##TEMPAGE --The join
 LEFT OUTER JOIN BB_Ref_AgeBracket 
 ON ##TEMPAGE.YearsOfAge BETWEEN BB_Ref_AgeBracket.StartAge AND BB_Ref_AgeBracket.EndAge
 
+
+
+
+
+/*********************************************************
+UPDATE Statements -Fixing address data example
+
+PRO TIP:  When doing UPDATEs DON'T FORGET THE WHERE CLAUSE !!!!!
+
+Added by Ben 8.17.17
+*********************************************************/
+
+
+	--Create temp table to make changes in first
+SELECT *
+INTO ##TEMPAddressFix 
+FROM BB_ActivePersonDetail
+*/
+
+	
+	-Search for rows to update
+SELECT DISTINCT City, State, Zip
+FROM ##TEMPAddressFix
+ORDER BY City
+
+
+	--The UPDATE statement
+UPDATE ##TEMPAddressFix
+SET City = 'Barkhamsted'
+WHERE City = 'Barhamsted'
+OR City LIKE 'Barkhamstad'
+OR City LIKE 'BARKHAMSTEAD'
+OR City LIKE 'BARKHAMSTED'
+OR City LIKE 'Barkhamsted,'
+
+UPDATE ##TEMPAddressFix Set City = NULL, Zip = '06762' WHERE City = '06762' AND Zip = '99999'
+UPDATE ##TEMPAddressFix Set State = 'CT' WHERE City = 'Brewster'
+
+
+
+
+
+
