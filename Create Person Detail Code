@@ -1,0 +1,925 @@
+
+
+/************************************************************
+STILL SOME DATA ISSUES TO WORK OUT.
+CHECK COUNTS IN EACH STAGE, ETC.
+************************************************************/
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Create ActivePerson rows according to NOI Active Client Criteria (below).
+-Combine these records with PersonID and add AteMonthlyKey
+-Deduplicate records so each Person is not shown as active more than once per month
+
+Active Client Criteria:
+	1.	a service start date is during specified date range. Note: the Data Bridge includes Application Assistance and Referrals as services.
+	2.	a completion date (service or outcome) is during specified date range
+	3.	a progressing status (service or outcome) is during specified date range
+	4.	an assessment (pre-assessment or baseline assessment) is completed during specified date range
+	5.	any demographic information was updated during specified date range (regardless of if the client is receiving an active service) 
+
+
+*****************************************************************************************************************************************/
+
+
+	--SELECT Active Client Criteria #1-3
+
+SELECT PP.PersonID, PPS.StartDate, ISNULL(PPS.ActualCompletionDate,GETDATE()) as EndDate, DateMonthlyKey
+--26803728
+INTO #TempActive
+
+		FROM PersonPlan PP
+
+		LEFT OUTER JOIN
+		PersonPlanService PPS
+		ON PP.PersonPlanID = 
+		PPS.PersonPlanID
+
+		INNER JOIN DimDateMonthly DDM
+		ON 
+			(
+			DDM.Year >= DATEPART(yy,PPS.StartDate)
+			AND DDM.Month >= DATEPART(mm,PPS.StartDate)
+			)
+
+		  OR
+			(
+			DDM.Year <= DATEPART(yy,PPS.ActualCompletionDate)
+			AND DDM.Month <= DATEPART(mm,PPS.ActualCompletionDate)
+			)
+
+		WHERE DDM.Year <= DATEPART(yy,GETDATE())
+		AND DDM.Month <= DATEPART(mm,GETDATE()) 
+
+
+UNION
+
+		SELECT PP.PersonID, PPSO.StartDate, ISNULL(PPSO.ActualCompletionDate,GETDATE()) as EndDate, DateMonthlyKey
+
+		FROM PersonPlan PP
+
+		LEFT OUTER JOIN
+		PersonPlanService PPS
+		ON PP.PersonPlanID = 
+		PPS.PersonPlanID
+
+		LEFT OUTER JOIN PersonPlanServiceOutcomeJoin PPSOJ
+		ON PPSOJ.PersonPlanServiceID =
+		PPS.PersonPlanServiceID
+
+		LEFT OUTER JOIN PersonPlanServiceOutcome PPSO
+		ON PPSO.PersonPlanServiceOutcomeID =
+		PPSOJ.PersonPlanServiceOutcomeID
+
+
+		INNER JOIN DimDateMonthly DDM
+		ON 
+			(
+			DDM.Year >= DATEPART(yy,PPSO.StartDate)
+			AND DDM.Month >= DATEPART(mm,PPSO.StartDate)
+			)
+
+		  OR
+			(
+			DDM.Year <= DATEPART(yy,ISNULL(PPSO.ActualCompletionDate,GETDATE()))
+			AND DDM.Month <= DATEPART(mm,ISNULL(PPSO.ActualCompletionDate,GETDATE()))
+			)
+
+		WHERE DDM.Year <= DATEPART(yy,GETDATE())
+		AND DDM.Month <= DATEPART(mm,GETDATE()) 
+
+
+
+
+	--SELECT Active Client Crieria #4
+
+UNION 
+
+		SELECT PPA.PersonID, PPA.CreateDate as StartDate,  EndDate = PPA.CreateDate, DateMonthlyKey 
+		FROM PersonPreAssessment PPA
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PPA.CreateDate)
+			AND DDM.Month = DATEPART(mm,PPA.CreateDate)
+
+
+UNION 
+
+		SELECT PA.PersonID, PA.CreateDate as StartDate,  EndDate = PA.CreateDate, DateMonthlyKey 
+		FROM PersonAssessment PA
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PA.CreateDate)
+			AND DDM.Month = DATEPART(mm,PA.CreateDate)
+
+
+
+
+	--SELECT Active Client Crieria #5
+
+UNION
+
+		SELECT P.PersonID, P.CreateDate as StartDate,  EndDate = P.CreateDate, DateMonthlyKey 
+		FROM Person P
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,P.CreateDate)
+			AND DDM.Month = DATEPART(mm,P.CreateDate)
+
+
+UNION
+
+		SELECT P.PersonID, P.UpdateDate as StartDate,  EndDate = P.UpdateDate, DateMonthlyKey 
+		FROM Person P
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,P.UpdateDate)
+			AND DDM.Month = DATEPART(mm,P.UpdateDate)
+
+
+UNION
+
+		SELECT PH.PersonID, PH.CreateDate as StartDate,  EndDate = PH.CreateDate, DateMonthlyKey 
+		FROM PersonHistory PH
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PH.CreateDate)
+			AND DDM.Month = DATEPART(mm,PH.CreateDate)
+
+
+UNION 
+
+		SELECT PC.PersonID, PC.RecordedDate as StartDate,  EndDate = PC.RecordedDate, DateMonthlyKey 
+		FROM PersonCharacteristic PC
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PC.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PC.RecordedDate)
+
+
+UNION 
+
+		SELECT PCH.PersonID, PCH.RecordedDate as StartDate,  EndDate = PCH.RecordedDate, DateMonthlyKey 
+		FROM PersonCharacteristicHistory PCH
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PCH.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PCH.RecordedDate)
+
+
+UNION 
+
+		SELECT PCo.PersonID, PCo.UpdateDate as StartDate,  EndDate = PCo.UpdateDate, DateMonthlyKey 
+		FROM PersonContact PCo
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PCo.UpdateDate)
+			AND DDM.Month = DATEPART(mm,PCo.UpdateDate)
+
+
+UNION 
+
+		SELECT PE.PersonID, PE.UpdateDate as StartDate,  EndDate = PE.UpdateDate, DateMonthlyKey 
+		FROM PersonEngagement PE
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PE.UpdateDate)
+			AND DDM.Month = DATEPART(mm,PE.UpdateDate)
+
+
+UNION 
+
+		SELECT PHI.PersonID, PHI.RecordedDate as StartDate,  EndDate = PHI.RecordedDate, DateMonthlyKey 
+		FROM PersonHealthInsurance PHI
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PHI.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PHI.RecordedDate)
+
+
+
+UNION 
+
+		SELECT PHIH.PersonID, PHIH.RecordedDate as StartDate,  EndDate = PHIH.RecordedDate, DateMonthlyKey 
+		FROM PersonHealthInsuranceHistory PHIH
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PHIH.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PHIH.RecordedDate)
+
+
+
+UNION 
+
+		SELECT PHAJ.PersonID, PHA.CreateDate as StartDate,  EndDate = PHA.UpdateDate, DateMonthlyKey 
+
+		FROM PersonHouseholdAddressJoin PHAJ
+
+		INNER JOIN PersonHouseholdAddress PHA
+		ON PHAJ.PersonHouseholdAddressID =
+		PHA.PersonHouseholdAddressID
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PHA.CreateDate)
+			AND DDM.Month = DATEPART(mm,PHA.CreateDate)
+
+
+UNION 
+
+		SELECT PHAJ.PersonID, PHA.UpdateDate as StartDate,  EndDate = PHA.UpdateDate, DateMonthlyKey 
+
+		FROM PersonHouseholdAddressJoin PHAJ
+
+		INNER JOIN PersonHouseholdAddress PHA
+		ON PHAJ.PersonHouseholdAddressID =
+		PHA.PersonHouseholdAddressID
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PHA.UpdateDate)
+			AND DDM.Month = DATEPART(mm,PHA.UpdateDate)
+
+
+UNION 
+
+		SELECT PI.PersonID, PI.RecordedDate as StartDate,  EndDate = PI.RecordedDate, DateMonthlyKey 
+		FROM PersonIncome PI
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PI.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PI.RecordedDate)
+
+
+UNION 
+
+		SELECT PIH.PersonID, PIH.RecordedDate as StartDate,  EndDate = PIH.RecordedDate, DateMonthlyKey 
+		FROM PersonIncomeHistory PIH
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PIH.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PIH.RecordedDate)
+
+
+UNION 
+
+		SELECT PR.PersonID, PR.CreateDate as StartDate,  EndDate = PR.CreateDate, DateMonthlyKey 
+		FROM PersonRace PR
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PR.CreateDate)
+			AND DDM.Month = DATEPART(mm,PR.CreateDate)
+
+
+UNION 
+
+		SELECT PR.PersonID, PR.UpdateDate as StartDate,  EndDate = PR.UpdateDate, DateMonthlyKey 
+		FROM PersonRace PR
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PR.UpdateDate)
+			AND DDM.Month = DATEPART(mm,PR.UpdateDate)
+
+
+
+
+	--SELECT unique Active Clients into temp table with PersonID, DateMonthlyKey and IsActive flag
+SELECT DISTINCT PersonID, DateMonthlyKey, IsActive = 1
+--10,697,590
+INTO #TempUniqueActivePerson
+FROM #TempActive
+
+
+
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Create PersonHousehold temp table for joining Household data to ActivePerson rows.
+
+*****************************************************************************************************************************************/
+
+SELECT PersonID, ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonID ORDER BY RecordedDate) as RowNbr, HouseholdID, PersonHouseholdAddressID, RecordedDate
+--293,591
+INTO ##TEMP01
+FROM PersonHouseholdAddressJoin
+	WHERE AddressTypeID = 1
+
+
+	--Impute start and end dates for each Person in different Households.
+SELECT PREP1.PersonID, PREP1.HouseHoldID, PREP1.PersonHouseholdAddressID, PREP1.RecordedDate as StartDate, ISNULL(PREP2.RecordedDate, GETDATE()) as EndDate
+--293,591
+INTO ##TEMP02
+FROM ##TEMP01 PREP1
+
+LEFT OUTER JOIN 
+##TEMP01 PREP2
+ON PREP1.PersonID = PREP2.PersonID
+	AND PREP1.RowNbr = (PREP2.RowNbr - 1)
+
+
+
+		--Continued...
+	SELECT ##TEMP02.*, DateMonthlyKey 
+--7,694,581
+	INTO ##TEMP03
+	FROM ##TEMP02 
+
+	INNER JOIN DimDateMonthly DDM
+	ON 
+		(DDM.StartDate  BETWEEN ##TEMP02.StartDate AND ##TEMP02.EndDate
+		OR 
+		DDM.EndDate  BETWEEN ##TEMP02.StartDate AND ##TEMP02.EndDate
+	)
+
+
+	--For any Persons that have more than one Household in a month, take the later dated Household for use.
+SELECT PersonID, HouseholdID, PersonHouseholdAddressID, DateMonthlyKey, StartDate, EndDate, ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonID, DateMonthlyKey ORDER BY StartDate DESC) as RowNbr
+--7,694,581
+INTO ##TEMP04
+FROM ##TEMP03
+
+		--Continued...
+	SELECT PersonID, HouseholdID, PersonHouseholdAddressID, DateMonthlyKey
+	INTO ##TempPersonHousehold
+	FROM ##TEMP04
+		WHERE RowNbr = 1
+
+
+	--Create temp table for join to ActivePerson
+SELECT * 
+--7,616,966 
+INTO #BB_PersonHousehold
+FROM ##TempPersonHousehold
+
+
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Create HouseholdHistory temp table for joining Household data to ActivePerson rows.
+
+*****************************************************************************************************************************************/
+
+SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, CreateDate, ROW_NUMBER ( )   
+    OVER (PARTITION BY HouseholdID ORDER BY CreateDate) as RowNbr
+--160979 
+INTO ##TEMP05
+FROM HouseholdHistory
+
+
+	--Impute start and end dates for each Household's characteristics.
+SELECT PREP1.HouseholdHistoryID, PREP1.HouseholdID, PREP1.FamilyTypeID, PREP1.HousingTypeID, PREP1.DwellingTypeID, PREP1.HeatingTypeID, PREP1.FPL, PREP1.FPLLevelID, 
+	PREP1.HouseholdSize, PREP1.AnnualIncome, PREP1.CreateDate as StartDate, ISNULL(PREP2.CreateDate, GETDATE()) as EndDate
+--160979 
+INTO ##TEMP06
+FROM ##TEMP05 PREP1
+
+LEFT OUTER JOIN 
+##TEMP05 PREP2
+ON PREP1.HouseholdID = PREP2.HouseholdID
+	AND PREP1.RowNbr = (PREP2.RowNbr - 1)
+	ORDER BY HouseHoldID, StartDate
+
+
+		--Continued...
+	SELECT ##TEMP06.*, DateMonthlyKey 
+--864675 
+	INTO ##TEMP07
+	FROM ##TEMP06 
+
+	INNER JOIN DimDateMonthly DDM
+	ON 
+		(DDM.StartDate  BETWEEN ##TEMP06.StartDate AND ##TEMP06.EndDate
+		OR 
+		DDM.EndDate  BETWEEN ##TEMP06.StartDate AND ##TEMP06.EndDate
+	)
+
+
+	--For any Persons that have more than one Household in a month, take the later dated Household for use.
+SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, StartDate, EndDate, DateMonthlyKey,  ROW_NUMBER ( )   
+    OVER (PARTITION BY HouseholdID, DateMonthlyKey ORDER BY StartDate DESC) as RowNbr
+--864675 
+INTO ##TEMP08
+FROM ##TEMP07
+
+SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, DateMonthlyKey
+--842417 
+INTO ##TempHouseholdHistory
+FROM ##TEMP08
+	WHERE RowNbr = 1
+
+
+	--Create temp table for join to ActivePerson
+SELECT * 
+--842417 
+INTO #BB_HouseholdHistory
+FROM ##TempHouseholdHistory
+
+SELECT COUNT(*) FROM ##TEMP08
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Create PersonHistory temp table for joining PersonHistory data to ActivePerson rows.
+
+*****************************************************************************************************************************************/
+
+	--UNION Person and PersonHistory to get all Person Records in one table
+
+SELECT 
+		PersonHistoryID = NULL
+      ,PersonID
+      ,BirthDate
+      ,PrimaryLanguageID
+      ,SecondLanguageID
+      ,EducationID
+      ,MaritalStatusID
+      ,EthnicityID
+      ,GenderID
+      ,FPL
+      ,AnnualIncome
+      ,DeceasedDate
+      ,CreateDate
+--492032
+INTO #TempPersonUnion
+  FROM Person
+
+UNION
+	SELECT
+		PersonHistoryID
+      ,PersonID
+      ,BirthDate
+      ,PrimaryLanguageID
+      ,SecondLanguageID
+      ,EducationID
+      ,MaritalStatusID
+      ,EthnicityID
+      ,GenderID
+      ,FPL
+      ,AnnualIncome
+      ,DeceasedDate
+      ,CreateDate
+  FROM PersonHistory
+
+
+
+	--Select rows and impute create and end dates for rows.
+SELECT
+	PH1.PersonHistoryID, 
+	PH1.PersonID, 
+	PH1.CreateDate as StartDate, 
+	PH1.BirthDate,
+	PH1.PrimaryLanguageID,
+	PH1.SecondLanguageID, 
+	PH1.EducationID,
+	PH1.MaritalStatusID,
+	PH1.EthnicityID,
+	PH1.GenderID,
+	PH1.FPL,
+	PH1.AnnualIncome,
+	PH1.DeceasedDate,
+	CASE WHEN PH2.EndDate IS NULL THEN GETDATE() ELSE PH2.EndDate END as EndDate
+
+--492032
+INTO #TEMP09
+FROM 	
+	(SELECT PersonHistoryID, PersonID, BirthDate, PrimaryLanguageID, SecondLanguageID, EducationID,	MaritalStatusID,
+		EthnicityID, GenderID, FPL,	AnnualIncome, DeceasedDate,
+	ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonID ORDER BY CreateDate) as RowNbr, CreateDate
+	FROM #TempPersonUnion) PH1
+
+LEFT OUTER JOIN
+	(SELECT PersonHistoryID, PersonID, ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonID ORDER BY CreateDate) as RowNbr, CreateDate as EndDate
+	FROM #TempPersonUnion) PH2
+
+ON PH1.PersonID = PH2.PersonID
+	AND (PH1.RowNbr + 1) = PH2.RowNbr
+
+
+
+	--Join to DimDateMonthly for DateMonthlyKey.
+	--Create and populate YearsOfAge and AgeBracketID fields.
+SELECT 
+	PersonHistoryID, 
+	PersonID, 
+	BirthDate, 
+	PrimaryLanguageID, 
+	SecondLanguageID, 
+	EducationID,	
+	MaritalStatusID, 
+	EthnicityID, 
+	GenderID, 
+	FPL, 
+	AnnualIncome, 
+	DeceasedDate, 
+	DateMonthlyKey, 
+	DDM.EndDate as EndDate
+
+--1325170
+INTO #TEMP10
+FROM #TEMP09 TTPH
+
+INNER JOIN DimDateMonthly DDM
+ON 
+	(DDM.StartDate  BETWEEN TTPH.StartDate AND TTPH.EndDate
+	OR 
+	DDM.EndDate  BETWEEN TTPH.StartDate AND TTPH.EndDate
+	)
+
+
+	--Partition to enable selection of only latest record for each month.
+	--Create and populate YearsOfAge and AgeBracketID fields.
+SELECT 
+	PersonHistoryID, 
+	PersonID, 
+	BirthDate, 
+	YearsOfAge = (DATEDIFF(mm, Birthdate, EndDate) / 12), 
+	AgeBracketID = CASE 
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 0 AND 5 
+					THEN 1 
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 6 AND 11 
+					THEN 2
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 12 AND 17 
+					THEN 3
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 18 AND 23 
+					THEN 4
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 24 AND 44 
+					THEN 5
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 45 AND 54 
+					THEN 6
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) BETWEEN 55 AND 69 
+					THEN 7
+					WHEN (DATEDIFF(mm, Birthdate, EndDate) / 12) >= 70 
+					THEN 8
+					ELSE NULL END, 
+	PrimaryLanguageID, 
+	SecondLanguageID, 
+	EducationID,	
+	MaritalStatusID, 
+	EthnicityID, 
+	GenderID, 
+	FPL, 
+	AnnualIncome, 
+	DeceasedDate, 
+	DateMonthlyKey, 
+	ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonID, DateMonthlyKey ORDER BY PersonHistoryID DESC) as RowNbr
+--1325170
+INTO #TEMP11	
+FROM #TEMP10
+
+	--Select only latest record for each month.
+SELECT PersonHistoryID, PersonID, BirthDate, YearsOfAge, AgeBracketID, PrimaryLanguageID, SecondLanguageID, EducationID,	
+		MaritalStatusID, EthnicityID, GenderID, FPL, AnnualIncome, DeceasedDate, DateMonthlyKey
+
+--1297168
+INTO #TEMP12	
+FROM #TEMP11
+	WHERE RowNbr = 1
+
+
+	--Create temp table for join to ActivePerson
+SELECT * 
+--1297168
+INTO #BB_PersonHistory
+FROM #TEMP12
+
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Join to previously created temp table to add additional Person and Household data to ActivePerson rows.
+
+*****************************************************************************************************************************************/
+
+SELECT 
+	ActivePersonKey = IDENTITY(int,1,1), TUAP.*, PH.HouseholdID, PH.PersonHouseholdAddressID, 
+	HH.HouseholdHistoryID,
+	PHi.Birthdate, PHi.YearsOfAge, PHi.AgeBracketID, PHi.PrimaryLanguageID, PHi.SecondLanguageID,
+	PHi.EducationID, PHi.MaritalStatusID, PHi.EthnicityID, PHi.GenderID, PHi.FPL,
+	PHi.AnnualIncome, PHi.DeceasedDate
+
+--894064
+INTO #TempUniqueActivePersonDetail
+FROM #TempUniqueActivePerson TUAP
+
+LEFT OUTER JOIN #BB_PersonHousehold PH
+ON TUAP.PersonID = PH.PersonID
+	AND TUAP.DateMonthlyKey = PH.DateMonthlyKey
+
+LEFT OUTER JOIN #BB_HouseholdHistory HH
+ON PH.HouseholdID = HH.HouseholdID
+	AND PH.DateMonthlyKey = HH.DateMonthlyKey
+
+INNER JOIN #BB_PersonHistory PHi
+ON TUAP.PersonID = PHi.PersonID
+	AND TUAP.DateMonthlyKey = PHi.DateMonthlyKey
+
+
+
+/*****************************************************************************************************************************************
+
+-Create PersonCharacteristic temp table for joining PersonCharacteristic data to ActivePerson rows.
+
+*****************************************************************************************************************************************/
+	--Joins all current and history records together with the neccessary columns.
+SELECT PCH.PersonCharacteristicID, PCH.PersonID, CharacteristicID, QualifierID, CreateDate, DateMonthlyKey 
+
+
+--2963000
+INTO #JoinHistoryAndCurrent_1
+
+		FROM PersonCharacteristicHistory PCH
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PCH.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PCH.RecordedDate)
+
+UNION
+
+		SELECT PC.PersonCharacteristicID, PC.PersonID, CharacteristicID, QualifierID, CreateDate, DateMonthlyKey 
+		FROM PersonCharacteristic PC
+
+		INNER JOIN DimDateMonthly DDM
+		ON	DDM.Year = DATEPART(yy,PC.RecordedDate)
+			AND DDM.Month = DATEPART(mm,PC.RecordedDate)
+
+
+
+	--Identifies bad data from update glitch that previously assigned multiple statuses to each month.  
+	--The first status for each month is used.
+SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
+OVER (PARTITION BY PersonCharacteristicID, DateMonthlyKey ORDER BY CreateDate) as RowNbr, CreateDate as EndDate
+
+--2963000
+INTO #TempIdentifyBadUpdates_2
+FROM #JoinHistoryAndCurrent_1
+
+
+
+	--Removes bad data from update glitch as identified above.  
+	--The first status for each month is used.
+SELECT PersonCharacteristicID, PersonID, CharacteristicID, QualifierID, DateMonthlyKey
+
+--2652852
+INTO #TempRemoveBadData_3
+FROM #TempIdentifyBadUpdates_2
+WHERE RowNbr = 1
+
+
+	--Prepare rows with Start and End Dates.
+SELECT PREP1.PersonCharacteristicID, PREP1.CharacteristicID, PREP1.PersonID, PREP1.QualifierID as StartQualifierID, 
+	CASE WHEN PREP2.QualifierID IS NULL THEN PREP1.QualifierID ELSE PREP2.QualifierID END as EndQualifierID, 
+	PREP1.DateMonthlyKey as StartMonth, CASE WHEN PREP2.DateMonthlyKey IS NULL THEN DDM.DateMonthlyKey ELSE (PREP2.DateMonthlyKey - 1) END as EndMonth
+
+--2652852
+INTO #TempStartEndDatePrep_4
+FROM 	
+	(
+	SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonCharacteristicID ORDER BY DateMonthlyKey) as RowNbr
+	FROM #TempRemoveBadData_3
+	) PREP1
+
+LEFT OUTER JOIN
+	(
+	SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
+    OVER (PARTITION BY PersonCharacteristicID ORDER BY DateMonthlyKey) as RowNbr
+	FROM #TempRemoveBadData_3
+	) PREP2
+
+ON PREP1.PersonCharacteristicID = PREP2.PersonCharacteristicID
+AND (PREP1.RowNbr + 1) = PREP2.RowNbr
+
+LEFT OUTER JOIN DimDateMonthly DDM
+ON DATEPART(mm, GETDATE()) = DDM.Month
+AND DATEPART(yy, GETDATE()) = DDM.year
+
+
+
+	--Final table with proper characteristics and qualifiers applied to all dates in running months.
+SELECT PersonCharacteristicID, PersonID, CharacteristicID, StartQualifierID as QualifierID, DateMonthlyKey
+
+--97336129
+INTO #TempPersonCharacteristic
+
+FROM #TempStartEndDatePrep_4
+
+INNER JOIN DimDateMonthly DDM
+ON 
+	(
+	DDM.DateMonthlyKey BETWEEN StartMonth AND EndMonth
+	)
+
+
+	--Create temp table for join to ActivePerson
+SELECT * 
+
+--97336129
+INTO #BB_PersonCharacteristic
+FROM #TempPersonCharacteristic
+
+
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+-Join PersonCharacteristic data to ActivePerson
+
+*****************************************************************************************************************************************/
+
+
+	--Get and pivot characteristics
+DECLARE @cols AS NVARCHAR(MAX);
+
+	select @cols = STUFF((SELECT distinct',' +
+							QUOTENAME(Characteristic)
+							FROM ref_Characteristic
+							FOR XML PATH(''), TYPE
+							).value('.', 'NVARCHAR(MAX)') 
+							, 1, 1, '');
+	declare @q nvarchar(max)
+	set @q = '
+	SELECT * INTO ##PERCHAPIV FROM 
+		(SELECT PersonCharacteristicID, PersonID, ref_Characteristic.Characteristic, QualifierID, DateMonthlyKey
+		FROM #BB_PersonCharacteristic 
+			LEFT OUTER JOIN ref_Characteristic 
+			ON #BB_PersonCharacteristic.CharacteristicID = ref_Characteristic.CharacteristicID
+		) PivCha
+			PIVOT(MAX(QualifierID)
+		FOR Characteristic IN(' + @cols + ')
+		) PERCHA'
+	exec (@q)	
+
+
+
+	--Get each PersonID and DateMonthlyKey with all characteristics on one line each.
+SELECT PersonID, DateMonthlyKey,
+ISNULL(Max([DSS Jobs First-TFA]) ,0)as 'DSS Jobs First-TFA',
+ISNULL(Max([DSS SNAP Recipient]) ,0)as 'DSS SNAP Recipient',
+ISNULL(Max([WIC]) ,0)as 'WIC',
+ISNULL(Max([DSS SAGA Cash]) ,0)as 'DSS SAGA Cash',
+ISNULL(Max([Student]) ,0)as 'Student',
+ISNULL(Max([Veteran]) ,0)as 'Veteran',
+ISNULL(Max([Farmer]) ,0)as 'Farmer',
+ISNULL(Max([Disabled]) ,0)as 'Disabled',
+ISNULL(Max([DSS State Supplement]) ,0)as 'DSS State Supplement',
+ISNULL(Max([Migrant Farm Worker]) ,0)as 'Migrant Farm Worker',
+ISNULL(Max([Seasonal Farm Worker]) ,0)as 'Seasonal Farm Worker',
+ISNULL(Max([DSS SAGA Medical]) ,0)as 'DSS SAGA Medical',
+ISNULL(Max([DSS Husky]) ,0)as 'DSS Husky',
+ISNULL(Max([Pregnant]) ,0)as 'Pregnant',
+ISNULL(Max([Purchase and Prepare]) ,0)as 'Purchase and Prepare',
+ISNULL(Max([Able to work]) ,0)as 'Able to work',
+ISNULL(Max([On Strike]) ,0)as 'On Strike',
+ISNULL(Max([Charter Oak]) ,0)as 'Charter Oak',
+ISNULL(Max([Medicare]) ,0)as 'Medicare',
+ISNULL(Max([Medicaid]) ,0)as 'Medicaid',
+ISNULL(Max([Blind]) ,0)as 'Blind',
+ISNULL(Max([Hearing Impaired]) ,0)as 'Hearing Impaired',
+ISNULL(Max([DOC Health Insurance]) ,0)as 'DOC Health Insurance',
+ISNULL(Max([Generic Health Insurance]) ,0)as 'Generic Health Insurance',
+ISNULL(Max([Private Health Insurance]) ,0)as 'Private Health Insurance',
+ISNULL(Max([No Health Insurance]) ,0)as 'No Health Insurance',
+ISNULL(Max([HUSKY D]) ,0)as 'HUSKY D',
+ISNULL(Max([Proficient Communicating in English]) ,0)as 'Proficient Communicating in English',
+ISNULL(Max([Social Security]) ,0)as 'Social Security',
+ISNULL(Max([SSI]) ,0)as 'SSI'
+--8177380
+INTO ##TEMP13
+FROM ##PERCHAPIV 
+GROUP BY PersonID, DateMonthlyKey
+
+
+
+	--Join together with ActivePerson in a temp table
+SELECT TUAPD.*,
+[DSS Jobs First-TFA] as 'DSSJobsFirst-TFA',
+[DSS SNAP Recipient] as 'DSSSNAPRecipient',
+[WIC] as 'WIC',
+[DSS SAGA Cash] as 'DSSSAGACash',
+[Student] as 'Student',
+[Veteran] as 'Veteran',
+[Farmer] as 'Farmer',
+[Disabled] as 'Disabled',
+[DSS State Supplement] as 'DSSStateSupplement',
+[Migrant Farm Worker] as 'MigrantFarmWorker',
+[Seasonal Farm Worker] as 'SeasonalFarmWorker',
+[DSS SAGA Medical] as 'DSSSAGAMedical',
+[DSS Husky] as 'DSSHusky',
+[Pregnant] as 'Pregnant',
+[Purchase and Prepare] as 'PurchaseandPrepare',
+[Able to work] as 'Abletowork',
+[On Strike] as 'OnStrike',
+[Charter Oak] as 'CharterOak',
+[Medicare] as 'Medicare',
+[Medicaid] as 'Medicaid',
+[Blind] as 'Blind',
+[Hearing Impaired] as 'HearingImpaired',
+[DOC Health Insurance] as 'DOCHealthInsurance',
+[Generic Health Insurance] as 'GenericHealthInsurance',
+[Private Health Insurance] as 'PrivateHealthInsurance',
+[No Health Insurance] as 'NoHealthInsurance',
+[HUSKY D] as 'HUSKYD',
+[Proficient Communicating in English] as 'ProficientCommunicatinginEnglish',
+[Social Security] as 'SocialSecurity',
+[SSI] as 'SSI'
+
+--894064
+INTO ##TempFinalCharacteristics
+FROM #TempUniqueActivePersonDetail TUAPD
+LEFT OUTER JOIN ##TEMP13
+ON TUAPD.PersonID = ##TEMP13.PersonID
+AND TUAPD.DateMonthlyKey = ##TEMP13.DateMonthlyKey
+
+
+
+
+
+
+	--Create new #TempUniqueActivePerson with characteristic values
+SELECT * 
+--894064
+INTO #TempActivePersonDetail_1
+FROM ##TempFinalCharacteristics
+
+
+
+
+
+/*****************************************************************************************************************************************
+
+ADD LOCATION DATA
+
+*****************************************************************************************************************************************/
+
+SELECT 
+	TAPD1.*, 
+	PHA.City, PHA.State, PHA.Zip, PHA.ZipExt, PHA.HouseDistrictID, PHA.SenateDistrictID
+--894064
+INTO ##TEMPAddress
+FROM #TempActivePersonDetail_1 TAPD1
+
+LEFT OUTER JOIN PersonHouseholdAddress PHA
+ON TAPD1.PersonHouseholdAddressID = PHA.PersonHouseholdAddressID
+
+
+
+
+SELECT *
+--894064
+INTO #TempActivePersonDetail_2
+FROM ##TEMPAddress
+
+SELECT COUNT(*) FROM #TempActivePersonDetail_2
+
+
+/*****************************************************************************************************************************************
+Add Household details
+*****************************************************************************************************************************************/
+
+
+SELECT 
+	TAPD2.*,
+	HH.FamilyTypeID, HH.HousingTypeID, HH.DwellingTypeID, HH.HeatingTypeID, HH.FPL as HouseholdFPL,
+	HH.FPLLevelID as HouseholdFPLLevelID, HH.HouseholdSize, HH.AnnualIncome as HouseholdAnnualIncome
+--894,064
+INTO ##TEMPHousehold
+FROM #TempActivePersonDetail_2  TAPD2
+
+LEFT OUTER JOIN HouseHoldHistory HH
+ON TAPD2.HouseholdHistoryID = 
+HH.HouseholdHistoryID
+
+
+SELECT *
+--894,064
+INTO #TempActivePersonDetail_3
+FROM ##TEMPHousehold
+
+
+SELECT TOP 1000 * FROM #TempActivePersonDetail_3
+
+
+
