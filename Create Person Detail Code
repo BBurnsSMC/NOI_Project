@@ -1426,4 +1426,75 @@ UPDATE BBAB_ActivePersonDetail Set City = 'Woodbury ', Zip = '06798 ' WHERE City
 
 
 
+/*****************************************************************************************************************************************
+Change dataset to only include rows we want
+Created: 9.14.17
+*****************************************************************************************************************************************/
+
+ADD JOINS AND CREATE STATEMENT HERE
+
+
+
+SELECT [ActivePersonKey]
+      ,[PersonID]
+      ,[DateMonthlyKey]
+      ,[IsActive]
+      ,[Birthdate]
+      ,[YearsOfAge]
+      ,[AgeRange]
+      ,[EthnicityDesc]
+      ,[GenderDescription]
+      ,[RaceDesc]
+      ,[FamilyTypeDesc]
+      ,[PrimaryLanguageDesc]
+      ,[SecondaryLanguageDesc]
+      ,[EducationDesc]
+      ,[MaritalStatusDesc]
+      ,[AnnualIncome]
+      ,[Student]
+      ,[Veteran]
+      ,[Farmer]
+      ,[Disabled]
+      ,[Pregnant]
+	  ,[City]
+      ,[State]
+      ,[Zip]
+	  ,[FPL]
+      ,[HouseholdFPL]
+      ,[FPLLevelDesc]
+	  ,[HouseholdSize]
+      ,[HouseholdAnnualIncome]
+      ,[HousingTypeDesc]
+      ,[DwellingTypeDesc]
+      ,[HeatingTypeDesc]
+	  ,[DeceasedDate]
+      ,[DSSJobsFirst-TFA]
+      ,[DSSSNAPRecipient]
+      ,[WIC]
+      ,[DSSSAGACash]
+	  ,[DSSStateSupplement]
+      ,[MigrantFarmWorker]
+      ,[SeasonalFarmWorker]
+      ,[DSSSAGAMedical]
+      ,[DSSHusky]
+      ,[PurchaseandPrepare]
+      ,[Abletowork]
+      ,[OnStrike]
+      ,[CharterOak]
+      ,[Medicare]
+      ,[Medicaid]
+      ,[Blind]
+      ,[HearingImpaired]
+      ,[DOCHealthInsurance]
+      ,[GenericHealthInsurance]
+      ,[PrivateHealthInsurance]
+      ,[NoHealthInsurance]
+      ,[HUSKYD]
+      ,[ProficientCommunicatinginEnglish]
+      ,[SocialSecurity]
+      ,[SSI]
+	INTO BBAB_ActivePersonDetail
+  FROM BBAB_ActivePersonDetail2
+
+
 
