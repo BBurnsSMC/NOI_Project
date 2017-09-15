@@ -1431,8 +1431,37 @@ Change dataset to only include rows we want
 Created: 9.14.17
 *****************************************************************************************************************************************/
 
-ADD JOINS AND CREATE STATEMENT HERE
-
+SELECT 
+	BBAPD.*, RR.RaceDesc, FT.FamilyTypeDesc, RL.LanguageDesc AS PrimaryLanguageDesc, RL2.LanguageDesc AS SecondaryLanguageDesc, RET.EducationDesc,
+	RMS.MaritalStatusDesc, RHT.HousingTypeDesc, RDT.DwellingTypeDesc, RHeatT.HeatingTypeDesc, BBRAB.AgeRange, RE.EthnicityDesc, RG.GenderDescription, FPLL.FPLLevelDesc
+INTO BBAB_ActivePersonDetail2 -- This creates a new table.
+FROM BBAB_ActivePersonDetail BBAPD
+LEFT OUTER JOIN ref_Race RR
+ON BBAPD.EthnicityID = RR.RaceID
+LEFT OUTER JOIN ref_FamilyType FT
+ON BBAPD.FamilyTypeID = FT.FamilyTypeID
+LEFT OUTER JOIN ref_Language RL
+ON BBAPD.PrimaryLanguageID = RL.LanguageID
+LEFT OUTER JOIN ref_Language RL2
+ON BBAPD.SecondLanguageID = RL2.LanguageID
+LEFT OUTER JOIN ref_EducationType RET
+ON BBAPD.EducationID = RET.EducationID
+LEFT OUTER JOIN ref_MaritalStatus RMS
+ON BBAPD.MaritalStatusID = RMS.MaritalStatusID
+LEFT OUTER JOIN ref_HousingType RHT
+ON BBAPD.HousingTypeID = RHT.HousingTypeID
+LEFT OUTER JOIN ref_DwellingType RDT
+ON BBAPD.DwellingTypeID = RDT.DwellingTypeID
+LEFT OUTER JOIN ref_HeatingType RHeatT
+ON BBAPD.HeatingTypeID = RHeatT.HeatingTypeID
+LEFT OUTER JOIN BB_Ref_AgeBracket BBRAB
+ON BBAPD.AgeBracketID = BBRAB.AgeBracketID
+LEFT OUTER JOIN ref_Ethnicity RE
+ON BBAPD.EthnicityID = RE.EthnicityID
+LEFT OUTER JOIN ref_Gender RG
+ON BBAPD.GenderID = RG.GenderID
+LEFT OUTER JOIN ref_FPLLevel FPLL
+ON BBAPD.HouseholdFPLLevelID = FPLL.FPLLevelID
 
 
 SELECT [ActivePersonKey]
