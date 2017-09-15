@@ -1,13 +1,5 @@
 
 
-/************************************************************
-STILL SOME DATA ISSUES TO WORK OUT.
-CHECK COUNTS IN EACH STAGE, ETC.
-************************************************************/
-
-
-
-
 /*****************************************************************************************************************************************
 
 -Create ActivePerson rows according to NOI Active Client Criteria (below).
@@ -25,11 +17,11 @@ Active Client Criteria:
 *****************************************************************************************************************************************/
 
 
-	--SELECT Active Client Criteria #1-3
+	--SELECT Active Client Criteria ##1-3
 
 SELECT PP.PersonID, PPS.StartDate, ISNULL(PPS.ActualCompletionDate,GETDATE()) as EndDate, DateMonthlyKey
 --26803728
-INTO #TempActive
+INTO ##TempActive
 
 		FROM PersonPlan PP
 
@@ -94,7 +86,7 @@ UNION
 
 
 
-	--SELECT Active Client Crieria #4
+	--SELECT Active Client Crieria ##4
 
 UNION 
 
@@ -118,7 +110,7 @@ UNION
 
 
 
-	--SELECT Active Client Crieria #5
+	--SELECT Active Client Crieria ##5
 
 UNION
 
@@ -287,8 +279,8 @@ UNION
 	--SELECT unique Active Clients into temp table with PersonID, DateMonthlyKey and IsActive flag
 SELECT DISTINCT PersonID, DateMonthlyKey, IsActive = 1
 --10,697,590
-INTO #TempUniqueActivePerson
-FROM #TempActive
+INTO ##TempUniqueActivePerson
+FROM ##TempActive
 
 
 
@@ -355,7 +347,7 @@ FROM ##TEMP03
 	--Create temp table for join to ActivePerson
 SELECT * 
 --7,616,966 
-INTO #BB_PersonHousehold
+INTO ##BB_PersonHousehold
 FROM ##TempPersonHousehold
 
 
@@ -372,7 +364,7 @@ FROM ##TempPersonHousehold
 
 SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, CreateDate, ROW_NUMBER ( )   
     OVER (PARTITION BY HouseholdID ORDER BY CreateDate) as RowNbr
---160979 
+--160,979 
 INTO ##TEMP05
 FROM HouseholdHistory
 
@@ -380,7 +372,7 @@ FROM HouseholdHistory
 	--Impute start and end dates for each Household's characteristics.
 SELECT PREP1.HouseholdHistoryID, PREP1.HouseholdID, PREP1.FamilyTypeID, PREP1.HousingTypeID, PREP1.DwellingTypeID, PREP1.HeatingTypeID, PREP1.FPL, PREP1.FPLLevelID, 
 	PREP1.HouseholdSize, PREP1.AnnualIncome, PREP1.CreateDate as StartDate, ISNULL(PREP2.CreateDate, GETDATE()) as EndDate
---160979 
+--160,979 
 INTO ##TEMP06
 FROM ##TEMP05 PREP1
 
@@ -393,7 +385,7 @@ ON PREP1.HouseholdID = PREP2.HouseholdID
 
 		--Continued...
 	SELECT ##TEMP06.*, DateMonthlyKey 
---864675 
+--864,675 
 	INTO ##TEMP07
 	FROM ##TEMP06 
 
@@ -408,12 +400,12 @@ ON PREP1.HouseholdID = PREP2.HouseholdID
 	--For any Persons that have more than one Household in a month, take the later dated Household for use.
 SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, StartDate, EndDate, DateMonthlyKey,  ROW_NUMBER ( )   
     OVER (PARTITION BY HouseholdID, DateMonthlyKey ORDER BY StartDate DESC) as RowNbr
---864675 
+--864,675 
 INTO ##TEMP08
 FROM ##TEMP07
 
 SELECT HouseholdHistoryID, HouseholdID, FamilyTypeID, HousingTypeID, DwellingTypeID, HeatingTypeID, FPL, FPLLevelID, HouseholdSize, AnnualIncome, DateMonthlyKey
---842417 
+--842,417 
 INTO ##TempHouseholdHistory
 FROM ##TEMP08
 	WHERE RowNbr = 1
@@ -421,8 +413,8 @@ FROM ##TEMP08
 
 	--Create temp table for join to ActivePerson
 SELECT * 
---842417 
-INTO #BB_HouseholdHistory
+--842,417 
+INTO ##BB_HouseholdHistory
 FROM ##TempHouseholdHistory
 
 SELECT COUNT(*) FROM ##TEMP08
@@ -453,8 +445,8 @@ SELECT
       ,AnnualIncome
       ,DeceasedDate
       ,CreateDate
---492032
-INTO #TempPersonUnion
+--492,032
+INTO ##TempPersonUnion
   FROM Person
 
 UNION
@@ -493,19 +485,19 @@ SELECT
 	PH1.DeceasedDate,
 	CASE WHEN PH2.EndDate IS NULL THEN GETDATE() ELSE PH2.EndDate END as EndDate
 
---492032
-INTO #TEMP09
+--492,032
+INTO ##TEMP09
 FROM 	
 	(SELECT PersonHistoryID, PersonID, BirthDate, PrimaryLanguageID, SecondLanguageID, EducationID,	MaritalStatusID,
 		EthnicityID, GenderID, FPL,	AnnualIncome, DeceasedDate,
 	ROW_NUMBER ( )   
     OVER (PARTITION BY PersonID ORDER BY CreateDate) as RowNbr, CreateDate
-	FROM #TempPersonUnion) PH1
+	FROM ##TempPersonUnion) PH1
 
 LEFT OUTER JOIN
 	(SELECT PersonHistoryID, PersonID, ROW_NUMBER ( )   
     OVER (PARTITION BY PersonID ORDER BY CreateDate) as RowNbr, CreateDate as EndDate
-	FROM #TempPersonUnion) PH2
+	FROM ##TempPersonUnion) PH2
 
 ON PH1.PersonID = PH2.PersonID
 	AND (PH1.RowNbr + 1) = PH2.RowNbr
@@ -530,9 +522,9 @@ SELECT
 	DateMonthlyKey, 
 	DDM.EndDate as EndDate
 
---1325170
-INTO #TEMP10
-FROM #TEMP09 TTPH
+--1,325,170
+INTO ##TEMP10
+FROM ##TEMP09 TTPH
 
 INNER JOIN DimDateMonthly DDM
 ON 
@@ -579,25 +571,25 @@ SELECT
 	DateMonthlyKey, 
 	ROW_NUMBER ( )   
     OVER (PARTITION BY PersonID, DateMonthlyKey ORDER BY PersonHistoryID DESC) as RowNbr
---1325170
-INTO #TEMP11	
-FROM #TEMP10
+--1,325,170
+INTO ##TEMP11	
+FROM ##TEMP10
 
 	--Select only latest record for each month.
 SELECT PersonHistoryID, PersonID, BirthDate, YearsOfAge, AgeBracketID, PrimaryLanguageID, SecondLanguageID, EducationID,	
 		MaritalStatusID, EthnicityID, GenderID, FPL, AnnualIncome, DeceasedDate, DateMonthlyKey
 
---1297168
-INTO #TEMP12	
-FROM #TEMP11
+--1,297,168
+INTO ##TEMP12	
+FROM ##TEMP11
 	WHERE RowNbr = 1
 
 
 	--Create temp table for join to ActivePerson
 SELECT * 
---1297168
-INTO #BB_PersonHistory
-FROM #TEMP12
+--1,297,168
+INTO ##BB_PersonHistory
+FROM ##TEMP12
 
 
 
@@ -617,22 +609,21 @@ SELECT
 	PHi.EducationID, PHi.MaritalStatusID, PHi.EthnicityID, PHi.GenderID, PHi.FPL,
 	PHi.AnnualIncome, PHi.DeceasedDate
 
---894064
-INTO #TempUniqueActivePersonDetail
-FROM #TempUniqueActivePerson TUAP
+--10,697,590
+INTO ##TempUniqueActivePersonDetail
+FROM ##TempUniqueActivePerson TUAP
 
-LEFT OUTER JOIN #BB_PersonHousehold PH
+LEFT OUTER JOIN ##BB_PersonHousehold PH
 ON TUAP.PersonID = PH.PersonID
 	AND TUAP.DateMonthlyKey = PH.DateMonthlyKey
 
-LEFT OUTER JOIN #BB_HouseholdHistory HH
+LEFT OUTER JOIN ##BB_HouseholdHistory HH
 ON PH.HouseholdID = HH.HouseholdID
 	AND PH.DateMonthlyKey = HH.DateMonthlyKey
 
-INNER JOIN #BB_PersonHistory PHi
+LEFT OUTER JOIN ##BB_PersonHistory PHi
 ON TUAP.PersonID = PHi.PersonID
 	AND TUAP.DateMonthlyKey = PHi.DateMonthlyKey
-
 
 
 /*****************************************************************************************************************************************
@@ -644,8 +635,8 @@ ON TUAP.PersonID = PHi.PersonID
 SELECT PCH.PersonCharacteristicID, PCH.PersonID, CharacteristicID, QualifierID, CreateDate, DateMonthlyKey 
 
 
---2963000
-INTO #JoinHistoryAndCurrent_1
+--2,963,000
+INTO ##JoinHistoryAndCurrent_1
 
 		FROM PersonCharacteristicHistory PCH
 
@@ -669,9 +660,9 @@ UNION
 SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
 OVER (PARTITION BY PersonCharacteristicID, DateMonthlyKey ORDER BY CreateDate) as RowNbr, CreateDate as EndDate
 
---2963000
-INTO #TempIdentifyBadUpdates_2
-FROM #JoinHistoryAndCurrent_1
+--2,963,000
+INTO ##TempIdentifyBadUpdates_2
+FROM ##JoinHistoryAndCurrent_1
 
 
 
@@ -679,9 +670,9 @@ FROM #JoinHistoryAndCurrent_1
 	--The first status for each month is used.
 SELECT PersonCharacteristicID, PersonID, CharacteristicID, QualifierID, DateMonthlyKey
 
---2652852
-INTO #TempRemoveBadData_3
-FROM #TempIdentifyBadUpdates_2
+--2,652,852
+INTO ##TempRemoveBadData_3
+FROM ##TempIdentifyBadUpdates_2
 WHERE RowNbr = 1
 
 
@@ -690,20 +681,20 @@ SELECT PREP1.PersonCharacteristicID, PREP1.CharacteristicID, PREP1.PersonID, PRE
 	CASE WHEN PREP2.QualifierID IS NULL THEN PREP1.QualifierID ELSE PREP2.QualifierID END as EndQualifierID, 
 	PREP1.DateMonthlyKey as StartMonth, CASE WHEN PREP2.DateMonthlyKey IS NULL THEN DDM.DateMonthlyKey ELSE (PREP2.DateMonthlyKey - 1) END as EndMonth
 
---2652852
-INTO #TempStartEndDatePrep_4
+--2,652,852
+INTO ##TempStartEndDatePrep_4
 FROM 	
 	(
 	SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
     OVER (PARTITION BY PersonCharacteristicID ORDER BY DateMonthlyKey) as RowNbr
-	FROM #TempRemoveBadData_3
+	FROM ##TempRemoveBadData_3
 	) PREP1
 
 LEFT OUTER JOIN
 	(
 	SELECT PersonCharacteristicID, PersonID, CharacteristicID, DateMonthlyKey, QualifierID, ROW_NUMBER ( )   
     OVER (PARTITION BY PersonCharacteristicID ORDER BY DateMonthlyKey) as RowNbr
-	FROM #TempRemoveBadData_3
+	FROM ##TempRemoveBadData_3
 	) PREP2
 
 ON PREP1.PersonCharacteristicID = PREP2.PersonCharacteristicID
@@ -718,10 +709,10 @@ AND DATEPART(yy, GETDATE()) = DDM.year
 	--Final table with proper characteristics and qualifiers applied to all dates in running months.
 SELECT PersonCharacteristicID, PersonID, CharacteristicID, StartQualifierID as QualifierID, DateMonthlyKey
 
---97336129
-INTO #TempPersonCharacteristic
+--97,336,129
+INTO ##TempPersonCharacteristic
 
-FROM #TempStartEndDatePrep_4
+FROM ##TempStartEndDatePrep_4
 
 INNER JOIN DimDateMonthly DDM
 ON 
@@ -733,9 +724,9 @@ ON
 	--Create temp table for join to ActivePerson
 SELECT * 
 
---97336129
-INTO #BB_PersonCharacteristic
-FROM #TempPersonCharacteristic
+--97,336,129
+INTO ##BB_PersonCharacteristic
+FROM ##TempPersonCharacteristic
 
 
 
@@ -763,9 +754,9 @@ DECLARE @cols AS NVARCHAR(MAX);
 	set @q = '
 	SELECT * INTO ##PERCHAPIV FROM 
 		(SELECT PersonCharacteristicID, PersonID, ref_Characteristic.Characteristic, QualifierID, DateMonthlyKey
-		FROM #BB_PersonCharacteristic 
+		FROM ##BB_PersonCharacteristic 
 			LEFT OUTER JOIN ref_Characteristic 
-			ON #BB_PersonCharacteristic.CharacteristicID = ref_Characteristic.CharacteristicID
+			ON ##BB_PersonCharacteristic.CharacteristicID = ref_Characteristic.CharacteristicID
 		) PivCha
 			PIVOT(MAX(QualifierID)
 		FOR Characteristic IN(' + @cols + ')
@@ -806,7 +797,7 @@ ISNULL(Max([HUSKY D]) ,0)as 'HUSKY D',
 ISNULL(Max([Proficient Communicating in English]) ,0)as 'Proficient Communicating in English',
 ISNULL(Max([Social Security]) ,0)as 'Social Security',
 ISNULL(Max([SSI]) ,0)as 'SSI'
---8177380
+--8,177,377
 INTO ##TEMP13
 FROM ##PERCHAPIV 
 GROUP BY PersonID, DateMonthlyKey
@@ -846,9 +837,9 @@ SELECT TUAPD.*,
 [Social Security] as 'SocialSecurity',
 [SSI] as 'SSI'
 
---894064
+--10,697,590
 INTO ##TempFinalCharacteristics
-FROM #TempUniqueActivePersonDetail TUAPD
+FROM ##TempUniqueActivePersonDetail TUAPD
 LEFT OUTER JOIN ##TEMP13
 ON TUAPD.PersonID = ##TEMP13.PersonID
 AND TUAPD.DateMonthlyKey = ##TEMP13.DateMonthlyKey
@@ -858,10 +849,10 @@ AND TUAPD.DateMonthlyKey = ##TEMP13.DateMonthlyKey
 
 
 
-	--Create new #TempUniqueActivePerson with characteristic values
+	--Create new ##TempUniqueActivePerson with characteristic values
 SELECT * 
---894064
-INTO #TempActivePersonDetail_1
+--10,697,590
+INTO ##TempActivePersonDetail_1
 FROM ##TempFinalCharacteristics
 
 
@@ -877,22 +868,21 @@ ADD LOCATION DATA
 SELECT 
 	TAPD1.*, 
 	PHA.City, PHA.State, PHA.Zip, PHA.ZipExt, PHA.HouseDistrictID, PHA.SenateDistrictID
---894064
+--10,697,590
 INTO ##TEMPAddress
-FROM #TempActivePersonDetail_1 TAPD1
+FROM ##TempActivePersonDetail_1 TAPD1
 
 LEFT OUTER JOIN PersonHouseholdAddress PHA
 ON TAPD1.PersonHouseholdAddressID = PHA.PersonHouseholdAddressID
 
 
 
-
 SELECT *
---894064
-INTO #TempActivePersonDetail_2
+--10,697,590
+INTO ##TempActivePersonDetail_2
 FROM ##TEMPAddress
 
-SELECT COUNT(*) FROM #TempActivePersonDetail_2
+
 
 
 /*****************************************************************************************************************************************
@@ -904,22 +894,536 @@ SELECT
 	TAPD2.*,
 	HH.FamilyTypeID, HH.HousingTypeID, HH.DwellingTypeID, HH.HeatingTypeID, HH.FPL as HouseholdFPL,
 	HH.FPLLevelID as HouseholdFPLLevelID, HH.HouseholdSize, HH.AnnualIncome as HouseholdAnnualIncome
---894,064
+--10,697,590
 INTO ##TEMPHousehold
-FROM #TempActivePersonDetail_2  TAPD2
+FROM ##TempActivePersonDetail_2  TAPD2
 
 LEFT OUTER JOIN HouseHoldHistory HH
 ON TAPD2.HouseholdHistoryID = 
 HH.HouseholdHistoryID
 
-
+SELECT COUNT(*) FROM ##TempActivePersonDetail_3
 SELECT *
---894,064
-INTO #TempActivePersonDetail_3
+--10,697,590
+INTO ##TempActivePersonDetail_3
 FROM ##TEMPHousehold
 
 
-SELECT TOP 1000 * FROM #TempActivePersonDetail_3
+
+/*****************************************************************************************************************************************
+Create data sets
+*****************************************************************************************************************************************/
+
+
+/* Creates dataset with all 10 million plus records with simple NULLs in many variables that go back past history dates.
+SELECT * 
+INTO BBABActivePersonDetail_NULLs
+FROM ##TempActivePersonDetail_3
+*/
+
+
+	--Created 9.14.17
+/* Creates dataset with only March 2017 through May 2017.
+SELECT * 
+INTO BBAB_ActivePersonDetail
+FROM BBABActivePersonDetail_NULLs
+WHERE DateMonthlyKey BETWEEN 111 and 114
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*********************************************************************************************************************************
+Created:		9.14.17
+Last Updated:	
+
+Fix Address data.
+
+*********************************************************************************************************************************/
+
+
+
+	--Obviously misspelled Barkhamsteds
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Barkhamsted'
+WHERE City = 'Barhamsted'
+OR City LIKE 'Barkhamstad'
+OR City LIKE 'BARKHAMSTEAD'
+OR City LIKE 'BARKHAMSTED'
+OR City LIKE 'Barkhamsted,'
+
+
+	--Obviously misspelled Barkhamsteds
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Barkhamsted'
+WHERE City = 'Barhamsted'
+OR City LIKE 'Barkhamstad'
+
+	--Set to lower case
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Beacon Falls'
+WHERE City = 'BEACON FALLLS'
+
+
+	--Obviously misspelled Bethels
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bethel'
+WHERE City = 'Bethal'
+OR City LIKE 'BETHEL'
+
+	--Obviously misspelled Berlins
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Berlin'
+WHERE City = 'BERLIN CT'
+OR City = 'BERLIN'
+
+	--Obviously misspelled Bethlehems
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bethlehem'
+WHERE City = 'BETHLEHEM'
+OR City = 'Bethlehem,'
+OR City = 'Bethleham'
+
+	--Obviously misspelled Bristols
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bristol'
+WHERE City = 'BRISTOL'
+OR City = 'BRITOL'
+
+
+	--Obviously misspelled Bethany
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bethany'
+WHERE City = 'BETHANY'
+OR City = 'Bethany,'
+
+
+	--Obviously misspelled Bridgeport
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bridgeport'
+WHERE City = 'BRIDGEPORT STREET'
+OR City = 'BRIDGEPORT'
+
+
+	--Obviously misspelled Cornwall
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Cornwall'
+WHERE City = 'Ccornwall'
+OR City = 'Cornwall Bridge'
+
+
+	--Obviously misspelled Cheshire
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Cheshire'
+WHERE City = 'CHESHIRE'
+OR City = 'Cheshire,'
+OR City = 'CHESIRE'
+
+
+	--Obviously misspelled Danbury
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Danbury'
+WHERE City = 'DANBUARY'
+OR City = 'DANBURY'
+OR City = 'Danbury,'
+
+	--Obviously misspelled East Hartford
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'East Hartford'
+WHERE City = 'East Hratford'
+
+
+	--Obviously misspelled Falls Village
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Falls Village'
+WHERE City = 'Falls Villiage'
+
+
+	--Obviously misspelled Harwinton
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Harwinton'
+WHERE City = 'Harwington'
+OR City = 'HARWINTON'
+OR City = 'HARWINTOW'
+OR City = 'HSRWINTON'
+OR City = 'HAWINGTON'
+
+	--Obviously misspelled Harwinton
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Harwinton'
+WHERE City = 'Harwington'
+OR City = 'HARWINTON'
+OR City = 'HARWINTOW'
+OR City = 'HSRWINTON'
+OR City = 'HAWINGTON'
+
+	--Obviously misspelled Kensington
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Kensington'
+WHERE City = 'KENINGSTON'
+OR City = 'KENSINGTON'
+OR City = 'KENSINTON'
+
+
+
+	--Obviously misspelled Meriden
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Meriden' 
+WHERE City LIKE 'MEERIDEN'
+OR City LIKE 'Meiden'
+OR City LIKE 'MEIRDEN'
+OR City LIKE 'Merdein'
+OR City LIKE 'Merden'
+OR City LIKE 'Merdien'
+OR City LIKE 'Meridan'
+OR City LIKE 'Meride'
+OR City LIKE 'MERIDEEN'
+OR City LIKE 'MERIDEN'
+OR City LIKE 'MERIDEN CT'
+OR City LIKE 'Meriden,'
+OR City LIKE 'Meridenm'
+OR City LIKE 'Merident'
+OR City LIKE 'MERIDN'
+OR City LIKE 'Meridne'
+OR City LIKE 'Merien'
+OR City LIKE 'MERISDEN'
+OR City LIKE 'MERRIDEN'
+OR City LIKE 'Metriden'
+OR City LIKE 'Mreiden'
+OR City LIKE 'mriden'
+OR City LIKE 'S MERIDEN'
+OR City LIKE 'S. MERIDEN'
+OR City LIKE 'S.MERIDEN'
+OR City LIKE 'S.Neriden'
+OR City LIKE 'SOUTH MERIDEN'
+OR City LIKE 'SO MERIDEN'
+OR City LIKE 'SO. MERIDEN'
+OR City LIKE 'SO. Neriden'
+
+	--Obviously misspelled Naugatuck
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Naugatuck' 
+WHERE City LIKE 'Nagatuck'
+OR City LIKE 'NAGUATUCK'
+OR City LIKE 'NAUAGTUCK'
+OR City LIKE 'NAUGATACK'
+OR City LIKE 'NAUGATAUCK'
+OR City LIKE 'NAUGATUCK'
+OR City LIKE 'NAUGAUCK'
+OR City LIKE 'Naugautack'
+OR City LIKE 'Naugtuck'
+OR City LIKE 'Naugutuck'
+OR City LIKE 'Nauhatuck'
+OR City LIKE 'Nautatuck'
+
+
+	--Obviously misspelled New Britain
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'New Britain' 
+WHERE City LIKE 'NEW BRITAIN'
+OR City LIKE 'New Britian'
+
+
+	--Obviously misspelled New Hartford
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'New Hartford' 
+WHERE City LIKE 'New Harford'
+OR City LIKE 'NEW HARTFORD'
+
+
+	--Obviously misspelled Preston
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Preston' 
+WHERE City LIKE 'NEW PRESTON'
+OR City LIKE 'NEW PRESTON, MARBLE DALE'
+
+	--Obviously misspelled Plainville
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Plainville' 
+WHERE City LIKE 'PLAINTVILLE'
+OR City LIKE 'PLAINVILLE'
+OR City LIKE 'PLANTSVILLE'
+
+	--Obviously misspelled Prospect
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Prospect' 
+WHERE City LIKE 'PROPECT'
+OR City LIKE 'PROSPECT'
+
+
+	--Obviously misspelled Ridgefield
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Ridgefield' 
+WHERE City LIKE 'RIDGEFIELD'
+OR City LIKE 'Ridgefield,'
+
+	--Obviously misspelled Southington
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Southington' 
+WHERE City LIKE 'SAUTHINGTON'
+OR City LIKE 'SOUTHINGTON'
+OR City LIKE 'Soutington'
+OR City LIKE 'Southbury,'
+OR City LIKE 'Soutrhbury'
+
+	--Obviously misspelled Southbury
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Southbury' 
+WHERE City LIKE 'SOUTHBUIRY'
+OR City LIKE 'Southbury'
+OR City LIKE 'Soouthbury'
+OR City LIKE 'Southbury,'
+OR City LIKE 'Soutrhbury'
+
+
+	--Obviously misspelled Thomaston
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Thomaston' 
+WHERE City LIKE 'Thoamston'
+OR City LIKE 'Thomaston'
+
+
+
+	--Obviously misspelled Torrington
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Torrington' 
+WHERE City LIKE 'torerington'
+OR City LIKE 'torington'
+OR City LIKE 'TORR'
+OR City LIKE 'Torring,'
+OR City LIKE 'TORRINGTON'
+OR City LIKE 'torrington #2N'
+OR City LIKE 'torringtpn'
+OR City LIKE 'TORRINGTTON,'
+OR City LIKE 'torringtpn'
+OR City LIKE 'TORRINGTTON'
+OR City LIKE 'TORRINTON'
+OR City LIKE 'TORRNGTON'
+OR City LIKE 'Torrrington'
+OR City LIKE 'Tottington,'
+OR City LIKE 'Tottington'
+
+	--Obviously misspelled Wallingford
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Wallingford' 
+WHERE City LIKE 'Walingford'
+OR City LIKE 'WALLIGFORD'
+OR City LIKE 'WALLINGDORD'
+OR City LIKE 'WALLINGFOR'
+OR City LIKE 'WALLINGFORD'
+OR City LIKE 'WALLINGFPRD'
+OR City LIKE 'Wallingfrod'
+OR City LIKE 'TORRINGTTON,'
+OR City LIKE 'torringtpn'
+
+
+	--Obviously misspelled Waterburys
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Waterbury' 
+WHERE City LIKE '.WATERBURY'
+OR City LIKE 'WTBY'
+OR City LIKE 'wtby'
+OR City LIKE 'Waerbury'
+OR City LIKE 'WAETRBURY'
+OR City LIKE 'WARTERBURY'
+OR City LIKE 'wataerbury'
+OR City LIKE 'WATEBRURY'
+OR City LIKE 'WATEBRUY'
+OR City LIKE 'Watebury'
+OR City LIKE 'watebury'
+OR City LIKE 'WATEBURY'
+OR City LIKE 'WATERB URY'
+OR City LIKE 'Waterbiry'
+OR City LIKE 'WATERBRUY'
+OR City LIKE 'Waterbruy'
+OR City LIKE 'WATERBUIRY'
+OR City LIKE 'waterbur'
+OR City LIKE 'Waterbur;y'
+OR City LIKE 'Waterburt'
+OR City LIKE 'WATERBURU'
+OR City LIKE 'Waterburuy'
+OR City LIKE 'Waterbury'
+OR City LIKE 'WATERBURY'
+OR City LIKE 'Waterbury'
+OR City LIKE 'WATERBURY'
+OR City LIKE 'waterbury'
+OR City LIKE 'WATERBURY CT'
+OR City LIKE 'Waterbury,'
+OR City LIKE 'Waterbury, CT'
+OR City LIKE 'Waterbury;'
+OR City LIKE 'Waterbury06704'
+OR City LIKE 'Waterbuty'
+OR City LIKE 'WATERBUY'
+OR City LIKE 'Waterbuy'
+OR City LIKE 'WATERRBURY'
+OR City LIKE 'WATERURY'
+OR City LIKE 'Waterury'
+OR City LIKE 'WATERURY'
+OR City LIKE 'WATERVUY'
+OR City LIKE 'WATRBURY'
+OR City LIKE 'WATRBURY'
+OR City LIKE 'WATYERBURY'
+OR City LIKE 'Wayerbury'
+OR City LIKE 'jWaterbury'
+OR City LIKE 'W ATERBURY'
+OR City LIKE 'Waternury'
+OR City LIKE 'WTBY,'
+
+	--Obviously misspelled Watertown
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Watertown' 
+WHERE City LIKE 'Waterotwn'
+OR City LIKE 'Watertoown'
+OR City LIKE 'WATERTOWN'
+OR City LIKE 'Watertown,'
+OR City LIKE 'Waertown'
+
+
+	--Obviously misspelled Winchester
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Winchester' 
+WHERE City LIKE 'WINCHESTER'
+OR City LIKE 'Winchester Center'
+OR City LIKE 'Winchester Ctr.'
+
+
+	--Obviously misspelled Winsted
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Winsted' 
+WHERE City LIKE 'Winasted'
+OR City LIKE 'WINTSTED'
+OR City LIKE 'Wisted'
+
+	--Obviously misspelled Woodbury
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Woodbury' 
+WHERE City LIKE 'WOODBURY'
+OR City LIKE 'Woodbury, CT 06798'
+
+	--Obviously misspelled Yalesville
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Yalesville' 
+WHERE City LIKE 'Yalesville'
+OR City LIKE 'YALLESVILLE'
+
+	--Obviously misspelled Bantam
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Bantam' 
+WHERE City LIKE 'BAMTAN'
+OR City LIKE 'BANTAM'
+OR City LIKE 'Bantan'
+
+	--Obviously misspelled Middletown
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Middletown' 
+WHERE City LIKE 'MIDDLETOWN'
+OR City LIKE 'MIDLETOWN'
+
+	--Obviously misspelled North Canaan
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'North Canaan' 
+WHERE City LIKE 'North Caanan'
+OR City LIKE 'NORTH CANAAN'
+
+	--Obviously misspelled Oakvile
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Oakville' 
+WHERE City LIKE 'OAKVILLE'
+
+	--Obviously misspelled Portland
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Portland' 
+WHERE City LIKE 'PORTLAND'
+OR City LIKE 'Potland'
+
+	--Obviously misspelled Portland
+UPDATE BBAB_ActivePersonDetail 
+SET City = 'Sandy Hook' 
+WHERE City LIKE 'SandyHook'
+
+
+	--Miscellaneous updates
+UPDATE BBAB_ActivePersonDetail Set City = NULL, Zip = '06762' WHERE City = '06762' AND Zip = '99999'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Brewster'
+UPDATE BBAB_ActivePersonDetail Set State = 'NY', Zip = '06234' WHERE City = 'Brooklyn'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Meriden'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Newtown'
+UPDATE BBAB_ActivePersonDetail Set State = 'PA' WHERE City = 'PHILADELPHIA' 
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Southbury'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Soutington'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Thomaston'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Torrington'
+UPDATE BBAB_ActivePersonDetail Set State = 'CT' WHERE City = 'Waterbury'
+
+	--Miscellaneous updates from spreadsheet
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06762 ' WHERE City = '06762 ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06456 ' WHERE City = '2032351505 ' AND Zip = '06456 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06710 ' WHERE City = '2nd Floor ' AND Zip = '06710 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06712 ' WHERE City = '5012 ' AND Zip = '06712 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06488 ' WHERE City = '5018 ' AND Zip = '06488 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06759 ' WHERE City = '53 LITCHFIELD ' AND Zip = '06759 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06450 ' WHERE City = 'Apt 2 ' AND Zip = '06450 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06450 ' WHERE City = 'APT 307 ' AND Zip = '06450 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Barkhamsted ', Zip = '06063 ' WHERE City = 'Barkhamsted ' AND Zip = '96063 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Bethany ', Zip = '06524 ' WHERE City = 'Bethany ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Bristol ', Zip = '06710 ' WHERE City = 'Bristol ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Wallingford ', Zip = '06492 ' WHERE City = 'Cheshire ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06098 ' WHERE City = 'CT ' AND Zip = '06098 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06451 ' WHERE City = 'CT ' AND Zip = '06451 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '06450 ' WHERE City = 'ct ' AND Zip = '06450 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '999999 ' WHERE City = 'Culver City ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Danbury ', Zip = '06810 ' WHERE City = 'Danbury ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Meriden ', Zip = '04651 ' WHERE City = 'Meriden ' AND Zip = '60451 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Meriden ', Zip = '04651 ' WHERE City = 'Meriden ' AND Zip = '00451 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Meriden ', Zip = '06450 ' WHERE City = 'Meriden ' AND Zip = '06450 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Meriden ', Zip = '06450 ' WHERE City = 'Meriden ' AND Zip = '00645 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '99999 ' WHERE City = 'N/A ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Naugatuck ', Zip = '06670 ' WHERE City = 'Naugatuck ' AND Zip = '01677 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Meriden ', Zip = '06450 ' WHERE City = 'Neriden ' AND Zip = '06450 '
+UPDATE BBAB_ActivePersonDetail Set City = 'New Haven ', Zip = '06511 ' WHERE City = 'New Haven ' AND Zip = '10651 '
+UPDATE BBAB_ActivePersonDetail Set City = 'New Haven ', Zip = '06511 ' WHERE City = 'NEW HAVEN ' AND Zip = '06515 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Newtown ', Zip = '06470 ' WHERE City = 'Newtown ' AND Zip = '06740 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Oakville ', Zip = '06779 ' WHERE City = 'Oakville ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Oxford ', Zip = '06478 ' WHERE City = 'Oxford ' AND Zip = '06874 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Oxford ', Zip = '06478 ' WHERE City = 'Oxford ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Sharon ', Zip = '06796 ' WHERE City = 'Sharon ' AND Zip = '06790 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Shelton ', Zip = '06484 ' WHERE City = 'Shelton ' AND Zip = '06404 '
+UPDATE BBAB_ActivePersonDetail Set City = 'SOUTH WINDSOR ', Zip = '06074 ' WHERE City = 'SOUTH WINDSOR ' AND Zip = '06704 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Southbury ', Zip = '06498 ' WHERE City = 'Southbury ' AND Zip = '06798 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Southbury ', Zip = '06488 ' WHERE City = 'Southbury ' AND Zip = '00648 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Southbury ', Zip = '06488 ' WHERE City = 'Southbury ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torring ' AND Zip = '06790 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '06709 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '09790 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '07679 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '06098 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '06490 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Torrington ', Zip = '06790 ' WHERE City = 'Torrington ' AND Zip = '06779 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Unknown ', Zip = '99999 ' WHERE City = 'Unknown ' AND Zip = '06000 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '06790 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '09706 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '06779 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '00670 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06705 ' WHERE City = 'Waterbury ' AND Zip = '10705 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06708 ' WHERE City = 'Waterbury ' AND Zip = '06078 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06708 ' WHERE City = 'Waterbury ' AND Zip = '07708 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06720 ' WHERE City = 'Waterbury ' AND Zip = '02670 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '20000 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Waterbury ', Zip = '06709 ' WHERE City = 'Waterbury ' AND Zip = '00000 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Winsted ', Zip = '06098 ' WHERE City = 'Winsted ' AND Zip = '06790 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Winsted ', Zip = '06098 ' WHERE City = 'Winsted ' AND Zip = '07098 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Wolcott ', Zip = '06716 ' WHERE City = 'Wolcott ' AND Zip = '99999 '
+UPDATE BBAB_ActivePersonDetail Set City = 'Woodbury ', Zip = '06798 ' WHERE City = 'Woodbury ' AND Zip = '99999 '
+
+
 
 
 
