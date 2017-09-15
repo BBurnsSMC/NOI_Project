@@ -1463,6 +1463,7 @@ ON BBAPD.GenderID = RG.GenderID
 LEFT OUTER JOIN ref_FPLLevel FPLL
 ON BBAPD.HouseholdFPLLevelID = FPLL.FPLLevelID
 
+DROP TABLE BBAB_ActivePersonDetail
 
 SELECT [ActivePersonKey]
       ,[PersonID]
@@ -1525,5 +1526,5 @@ SELECT [ActivePersonKey]
 	INTO BBAB_ActivePersonDetail
   FROM BBAB_ActivePersonDetail2
 
-
+DROP TABLE BBAB_ActivePersonDetail2
 
