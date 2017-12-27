@@ -8,7 +8,8 @@ In no particular order...
   -Household with or without children flag (based on FamilyTypeID.  Figure out what to do about Other and Undeclared)
   -Check distributions of DwellingType to see if we want flags around Homeless and Emergency Shelter
   -Review Characteristics and see if any should be combined into flags
-  -In town with NOI campus flag.  Maybe separate flags for each of those towns?  Maybe categorical with Waterbury, Torrington, Meriden and Other?
+  -In town with NOI campus flag.  Maybe separate flags for each of those towns?  Maybe categorical with Waterbury, 
+    Torrington, Meriden and Other?
 
 2)  Determine if we want to do any binning or grouping of values in our variables.
 
@@ -17,9 +18,20 @@ In no particular order...
 4)  Search for outliers, and determine a method for dealing with them
 
 5)  Get template set up for a report. (Annie)
+    COMPLETE:  Template available on Google Drive. 
 
-6)  Gather code used to this point and put on Git hub. Fix data tables so we are getting DateMonthlyKey >= 92 (Ben)
+6)  Gather code used to this point and put on Git hub. 
+    COMPLETE:  Code available.
 
-7)  Brainstorm potential targets.
-  -Difference between previoud assessment and current.  Did Person get better or worse?
+7)  Fix data tables so we are getting DateMonthlyKey >= 92 (Ben)
+    COMPLETE:  Only data being used is from March 2017 - June 2017.  
+      I believe this is because that is the only reliable financial data, 
+      but we may need to research and ensure this is the appropriate date range (BB).
+
+8)  Brainstorm potential targets.
+  -Difference between previous assessment and current.  Did Person get better or worse?
   -Assessment score
+
+
+
+
