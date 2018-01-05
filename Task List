@@ -3,7 +3,7 @@ In no particular order...
 1)  Determine what kind of new variables we want to create.
   -FPL, AnnualIncome -Are they colinear?  Make bins.
   -Primary language not english flag
-  -Possibly reduce Education to 2 or 3 values? (BS)
+  -Create flag variables for each education level for each person (BS)
   -Consecutive months active
   -Household with or without children flag (based on FamilyTypeID.  Figure out what to do about Other and Undeclared)
   -Check distributions of DwellingType to see if we want flags around Homeless and Emergency Shelter
